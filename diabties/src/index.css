@@ -1,0 +1,23 @@
+@import "tailwindcss";
+
+@keyframes fade-in-out {
+  0%, 100% { opacity: 0; }
+  50% { opacity: 1; }
+}
+
+@keyframes fade-in-out-delayed {
+  0%, 50% { opacity: 0; }
+  50%, 100% { opacity: 1; }
+}
+
+.animate-fade-in-out {
+  animation: fade-in-out 4s ease-in-out infinite;
+}
+
+.animate-fade-in-out-delayed {
+  animation: fade-in-out-delayed 4s ease-in-out infinite;
+}
+
+.font-times-new-roman {
+  font-family: 'Times New Roman', serif;
+}
