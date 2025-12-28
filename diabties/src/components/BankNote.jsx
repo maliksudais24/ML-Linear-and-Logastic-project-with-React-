@@ -1,35 +1,26 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 
-const Diabaties = () => {
+const BankNote = () => {
 
   // Backend-required keys (DO NOT CHANGE)
   const [inputs, setInputs] = useState({
-    age: '',
-    bmi: '',
-    bp: '',
-    s1: '',
-    s2: '',
-    s3: '',
-    s4: '',
-    s5: '',
-    s6: ''
+    var: "",
+    skew: "",
+    curt: "",
+    entr: ""
   });
 
-  const [prediction, setPrediction] = useState(null);
+  const [result, setResult] = useState(null);
+  const [probability, setProbability] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // 🔹 Field labels shown to user
+  // 🔹 Fields info shown to user
   const fields = {
-    age: { label: "Age (years)", range: "20 – 80" },
-    bmi: { label: "BMI", range: "15 – 70" },
-    bp: { label: "Blood Pressure", range: "70 – 220" },
-    s1: { label: "Cholesterol (mg/dL)", range: "140 – 300" },
-    s2: { label: "LDL Cholesterol", range: "80 – 200" },
-    s3: { label: "HDL Cholesterol", range: "20 – 80" },
-    s4: { label: "Cholesterol Ratio", range: "2 – 7" },
-    s5: { label: "Triglycerides", range: "4 – 9" },
-    s6: { label: "Glucose Level", range: "80 – 250" }
+    var: { label: "Variance", range: "-10 to 10" },
+    skew: { label: "Skewness", range: "-10 to 10" },
+    curt: { label: "Curtosis", range: "-10 to 10" },
+    entr: { label: "Entropy", range: "-10 to 10" }
   };
 
   const handleInputChange = (e) => {
@@ -41,21 +32,25 @@ const Diabaties = () => {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    setPrediction(null);
+    setResult(null);
+    setProbability(null);
 
     try {
-      const response = await fetch("/api/diabetes/predict", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(inputs),
-      });
+     const response = await fetch("/api/banknote/authenticate", {
+     method: "POST",
+     headers: { "Content-Type": "application/json" },
+     body: JSON.stringify(inputs),
+});
 
       if (!response.ok) {
         throw new Error(`Server Error: ${response.status}`);
       }
 
       const data = await response.json();
-      setPrediction(data.prediction.toFixed(2));
+
+      setResult(data.prediction === 1 ? "Authentic Note" : "Fake Note");
+      setProbability((data.probability[0][data.prediction] * 100).toFixed(2));
+
     } catch (err) {
       setError(err.message);
     } finally {
@@ -65,18 +60,18 @@ const Diabaties = () => {
 
   return (
     <div className="min-h-screen bg-linear-to-r from-black via-gray-900 to-black flex items-center justify-center p-4">
-      <div className="bg-gray-800 bg-opacity-90 rounded-lg shadow-2xl p-8 w-full max-w-4xl">
-        
+      <div className="bg-gray-800 bg-opacity-90 rounded-lg shadow-2xl p-8 w-full max-w-3xl">
+
         <h1 className="text-4xl font-bold text-amber-500 text-center mb-6">
-          Diabetes Prediction Model
+          Bank Note Authentication
         </h1>
 
         <form onSubmit={handleSubmit} className="space-y-6">
 
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {Object.keys(inputs).map((key) => (
               <div key={key} className="flex flex-col">
-                
+
                 <label className="text-white font-semibold mb-1">
                   {fields[key].label}
                 </label>
@@ -104,14 +99,14 @@ const Diabaties = () => {
               type="submit"
               className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg transition"
             >
-              Predict Diabetes
+              Authenticate Note
             </button>
           </div>
         </form>
 
         {loading && (
           <p className="text-yellow-400 text-center mt-6">
-            Predicting...
+            Authenticating...
           </p>
         )}
 
@@ -121,13 +116,16 @@ const Diabaties = () => {
           </p>
         )}
 
-        {prediction && !loading && (
+        {result && !loading && (
           <div className="mt-6 p-4 bg-gray-700 rounded-lg text-center">
             <h2 className="text-white text-xl font-semibold mb-2">
-              Prediction Result
+              Result
             </h2>
-            <p className="text-green-400 text-lg">
-              Predicted Diabetes Value: <strong>{prediction}</strong>
+            <p className={`text-lg font-bold ${result === "Authentic Note" ? "text-green-400" : "text-red-400"}`}>
+              {result}
+            </p>
+            <p className="text-gray-300 mt-2">
+              Confidence: <strong>{probability}%</strong>
             </p>
           </div>
         )}
@@ -136,4 +134,4 @@ const Diabaties = () => {
   );
 };
 
-export default Diabaties;
+export default BankNote;

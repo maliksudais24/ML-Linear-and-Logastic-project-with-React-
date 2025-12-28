@@ -6,44 +6,86 @@ import numpy as np
 app = Flask(__name__)
 CORS(app)
 
-model = joblib.load("best_diabetes_model.joblib")
+# ================================
+# Load Models (ONCE at startup)
+# ================================
+diabetes_model = joblib.load("best_diabetes_model.joblib")
 
-@app.route('/predict', methods=['POST'])
-def predict():
+banknote_model = joblib.load("bank_note_authentication_model.joblib")
+banknote_transformer = joblib.load("power_transformer.joblib")
+
+# ================================
+# Health Check
+# ================================
+@app.route("/info", methods=["GET"])
+def info():
+    return jsonify({
+        "status": "API is running",
+        "models": ["diabetes", "banknote"]
+    })
+
+# ================================
+# Diabetes Prediction API
+# ================================
+@app.route("/api/diabetes/predict", methods=["POST"])
+def predict_diabetes():
     try:
-        user_data = request.get_json()
-        print("Received data:", user_data)  # Debug log
-        # Extract values (SEX REMOVED!)
-        features = [
-            float(user_data['age']),
-            float(user_data['bmi']),
-            float(user_data['bp']),
-            float(user_data['s1']),
-            float(user_data['s2']),
-            float(user_data['s3']),
-            float(user_data['s4']),
-            float(user_data['s5']),
-            float(user_data['s6'])
-        ]
-        print("Features:", features)  # Debug log
+        data = request.get_json()
 
-        # reshape for sklearn
-        features = np.array(features).reshape(1, -1)
+        features = np.array([[
+            float(data["age"]),
+            float(data["bmi"]),
+            float(data["bp"]),
+            float(data["s1"]),
+            float(data["s2"]),
+            float(data["s3"]),
+            float(data["s4"]),
+            float(data["s5"]),
+            float(data["s6"]),
+        ]])
 
-        # prediction
-        prediction = model.predict(features)[0]
-        print("Prediction:", prediction)  # Debug log
+        prediction = diabetes_model.predict(features)[0]
 
         return jsonify({
             "prediction": float(prediction)
         })
 
     except Exception as e:
-        print("Error:", str(e))  # Debug log
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": str(e)}), 400
 
-@app.route('/info', methods=['GET'])
-def info():
-    return jsonify({"message": "API working successfully"})
+
+# ================================
+# Bank Note Authentication API
+# ================================
+@app.route("/api/banknote/authenticate", methods=["POST"])
+def authenticate_banknote():
+    try:
+        data = request.get_json()
+
+        features = np.array([[
+            float(data["var"]),
+            float(data["skew"]),
+            float(data["curt"]),
+            float(data["entr"]),
+        ]])
+
+        # Apply power transformer ONLY on curt & entr
+        features[:, 2:4] = banknote_transformer.transform(features[:, 2:4])
+
+        prediction = int(banknote_model.predict(features)[0])
+        probability = banknote_model.predict_proba(features).tolist()
+
+        return jsonify({
+            "prediction": prediction,
+            "probability": probability
+        })
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+
+# ================================
+# Run Server
+# ================================
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(port=5000, debug=True)

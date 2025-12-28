@@ -1,44 +1,62 @@
-import pandas as pd 
+import pandas as pd
 import numpy as np
+import joblib
 from sklearn.preprocessing import PowerTransformer
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
 
-df = pd.read_csv("bank_note_authentication.csv")
-print(df.head(10))
-print(df.columns.tolist())
-print(df.shape)
-print(df.info())
-print(df.isnull().sum())
 
-print(df.skew())
-pt = PowerTransformer(method='yeo-johnson')
-df[['curt', 'entr']] = pt.fit_transform(df[['curt', 'entr']])
+def load_data():
+    df = pd.read_csv("bank_note_authentication.csv")
 
-print(df.skew())
+    print(df.head(10))
+    print(df.columns.tolist())
+    print(df.shape)
+    print(df.info())
+    print(df.isnull().sum())
 
-class_counts = df['auth'].value_counts()
-print(class_counts)
+    print("\nSkewness before transform:")
+    print(df.skew())
 
-x = df.drop(columns=["auth"]).values
-y = df["auth"].values
+    X = df.drop(columns=["auth"])
+    y = df["auth"]
 
-x_train , X_test , Y_train , Y_test = train_test_split(
-x , y , test_size=0.2 , random_state=42
-)
-model = LogisticRegression(solver= "liblinear" , random_state=0)
+    return X, y
 
-model.fit(x_train,Y_train)
 
-y_pred = model.predict(X_test)
+def train_and_test_data():
+    X, y = load_data()
 
-# You can also predict probabilities using .predict_proba()
-probabilities = model.predict_proba(X_test)
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42, stratify=y
+    )
 
-print(f"Accuracy: {accuracy_score(Y_test, y_pred)}")
-print("Confusion Matrix:")
-print(confusion_matrix(Y_test, y_pred))
-print("Classification Report:")
-print(classification_report(Y_test, y_pred))
+    # Apply PowerTransformer ONLY on training data
+    pt = PowerTransformer(method="yeo-johnson")
+    X_train[['curt', 'entr']] = pt.fit_transform(X_train[['curt', 'entr']])
+    X_test[['curt', 'entr']] = pt.transform(X_test[['curt', 'entr']])
 
+    print("\nSkewness after transform (train data):")
+    print(X_train.skew())
+
+    model = LogisticRegression(solver="liblinear", random_state=0)
+    model.fit(X_train, y_train)
+
+    y_pred = model.predict(X_test)
+
+    print("\nAccuracy:", accuracy_score(y_test, y_pred))
+    print("\nConfusion Matrix:")
+    print(confusion_matrix(y_test, y_pred))
+    print("\nClassification Report:")
+    print(classification_report(y_test, y_pred))
+
+    # Save trained model
+    joblib.dump(model, "bank_note_authentication_model.joblib")
+    joblib.dump(pt, "power_transformer.joblib")
+
+    print("\nModel and transformer saved successfully!")
+
+
+if __name__ == "__main__":
+    train_and_test_data()
