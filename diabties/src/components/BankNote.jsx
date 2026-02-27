@@ -17,10 +17,10 @@ const BankNote = () => {
 
   // 🔹 Fields info shown to user
   const fields = {
-    var: { label: "Variance", range: "-10 to 10" },
-    skew: { label: "Skewness", range: "-10 to 10" },
-    curt: { label: "Curtosis", range: "-10 to 10" },
-    entr: { label: "Entropy", range: "-10 to 10" }
+    var: { label: "Surface Texture Quality", range: "-10 to 10" },
+    skew: { label: "Pattern Alignment", range: "-10 to 10" },
+    curt: { label: "Print Quality", range: "-10 to 10" },
+    entr: { label: "Image Detail Complexity", range: "-10 to 10" }
   };
 
   const handleInputChange = (e) => {
